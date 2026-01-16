@@ -1,39 +1,38 @@
 # KanbanBoard
 
-This template should help get you started developing with Vue 3 in Vite.
-
-## Recommended IDE Setup
-
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
 ## Project Setup
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
-
 ```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+## API Setup with Docker
+
+This project requires the KanbanBoardAPI backend to function. You can set up the API using Docker.
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/) must be installed on your system
+
+### Running the API with Docker
+
+1. Clone the KanbanBoardAPI repository:
 
 ```sh
-npm run build
+git clone https://github.com/mmadej20/KanbanBoardAPI.git
+cd KanbanBoardAPI
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+2. Build and run the Docker container:
 
 ```sh
-npm run lint
+docker-compose up -d
 ```
+
+3. The API will be available at `http://localhost:8080` (or the port specified in the API's configuration)
+
+For more details on the API project, refer to the [KanbanBoardAPI repository](https://github.com/mmadej20/KanbanBoardAPI).
