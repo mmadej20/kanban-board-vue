@@ -1,63 +1,67 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
 import { VueDraggableNext as draggable } from 'vue-draggable-next'
-import { computed, reactive, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useBoardsStore } from '@/stores/boards'
 import { StatusType, StatusTypes, StatusTypeLabel } from '@/models/StatusType'
-import type { Board } from '@/models/Board'
+import BoardItemCreator from './BoardItemCreator.vue'
 import type { BoardItem } from '@/models/BoardItem'
 
 const boardsStore = useBoardsStore()
-const board = computed(() => boardsStore.boards.find((b: Board) => b.id === boardsStore.selectedId))
+const board = computed(() => boardsStore.selectedBoard)
+const isCreatorOpen = ref(false)
+const creatorStatus = ref<StatusType>(StatusType.New)
+const creatorBoardId = ref('')
 
-function onDragChange(event: any, status: StatusType) {
-  if (event.added) {
-    const item = event.added.element
-    boardsStore.changeItemStatus(item.id, status)
+const columns = computed<Record<StatusType, BoardItem[]>>(() => {
+  const result = {} as Record<StatusType, BoardItem[]>
+  for (const st of StatusTypes) {
+    result[st] = []
   }
-}
 
-async function addBoardItem(status: StatusType, boardId: string) {
+  for (const item of board.value?.boardItems ?? []) {
+    result[item.status].push(item)
+  }
+
+  return result
+})
+
+async function handleCreateItem(name: string, description: string) {
   const newItem: BoardItem = {
     id: '',
-    boardId: boardId,
+    boardId: creatorBoardId.value,
     assignedMemberId: '',
-    name: 'New Item',
-    description: '',
-    status: status,
+    name: name,
+    description: description,
+    status: creatorStatus.value,
   }
   const response: string = await boardsStore.addItemToBoard(
     newItem.boardId,
     newItem.name,
     newItem.description,
   )
-  await boardsStore.changeItemStatus(response, status) // optimize it so that status is set on creation
+  await boardsStore.changeItemStatus(response, creatorStatus.value)
   newItem.id = response
-  columns[newItem.status].push(newItem)
+  columns.value[newItem.status].push(newItem)
+  isCreatorOpen.value = false
 }
 
-const columns = reactive<Record<StatusType, any[]>>({
-  [StatusType.Canceled]: [],
-  [StatusType.New]: [],
-  [StatusType.ToDo]: [],
-  [StatusType.InProgress]: [],
-  [StatusType.OnHold]: [],
-  [StatusType.Completed]: [],
-})
+async function removeBoardItem(itemId: string) {
+  await boardsStore.removeItem(itemId)
+}
 
-watch(
-  () => board.value?.boardItems ?? [],
-  (items) => {
-    for (const st of StatusTypes) {
-      columns[st].splice(0, columns[st].length)
-    }
+function onDragChange(event: { added?: { element: BoardItem } }, status: StatusType) {
+  if (!event.added) {
+    return
+  }
+  boardsStore.changeItemStatus(event.added.element.id, status)
+}
 
-    for (const item of items) {
-      columns[item.status].push(item)
-    }
-  },
-  { immediate: true },
-)
+function openCreator(status: StatusType, boardId: string) {
+  creatorStatus.value = status
+  creatorBoardId.value = boardId
+  isCreatorOpen.value = true
+}
 </script>
 
 <template>
@@ -67,7 +71,7 @@ watch(
       <h3 :class="'status-' + status">
         {{ StatusTypeLabel[status] }}
       </h3>
-      <button class="add-button" @click="addBoardItem(status, board?.id)">Add new item</button>
+      <button class="add-button" @click="openCreator(status, board?.id)">Add new item</button>
       <div class="kanban-items">
         <draggable
           v-model="columns[status]"
@@ -79,6 +83,7 @@ watch(
         >
           <div v-for="item in columns[status]" :key="item.id" class="kanban-item">
             {{ item.name }}
+            <button class="remove-button" @click="removeBoardItem(item.id)">×</button>
           </div>
         </draggable>
       </div>
@@ -88,6 +93,14 @@ watch(
   <div v-else>
     <h2>No board selected</h2>
   </div>
+
+  <BoardItemCreator
+    :is-open="isCreatorOpen"
+    :status="creatorStatus"
+    :board-id="creatorBoardId"
+    @close="isCreatorOpen = false"
+    @create="handleCreateItem"
+  />
 </template>
 
 <style scoped>
@@ -196,5 +209,19 @@ watch(
   transition:
     background 0.2s ease,
     transform 0.1s ease;
+}
+
+.remove-button {
+  float: right;
+  background: transparent;
+  border: none;
+  color: #e04e4e;
+  font-size: 1.2rem;
+  line-height: 1rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  margin-top: 4px;
+  transition: color 0.2s ease;
 }
 </style>

@@ -1,74 +1,108 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import {
   getAllBoards,
   createBoard,
   deleteBoard,
   getBoardById,
   addBoardItem,
+  removeItemFromBoard,
   changeBoardItemStatus,
 } from '@/api/boards'
 import type { Board } from '@/models/Board'
 import type { StatusType } from '@/models/StatusType'
-export const useBoardsStore = defineStore('boards', {
-  state: () => ({
-    boards: [] as Board[],
-    loading: false as boolean,
-    error: null as string | null,
-    selectedId: null as string | null,
-  }),
-  actions: {
-    async fetchBoards() {
-      this.loading = true
-      this.error = null
-      try {
-        this.boards = await getAllBoards()
-      } catch (e: any) {
-        this.error = e.message
-      } finally {
-        this.loading = false
-      }
-    },
-    selectBoard(id: string) {
-      this.selectedId = id
-    },
-    async addBoard(name: string) {
-      await createBoard({ name })
-      await this.fetchBoards()
-    },
-    async removeBoard(id: string) {
-      await deleteBoard(id)
-      this.boards = this.boards.filter((b) => b.id !== id)
+export const useBoardsStore = defineStore('boards', () => {
+  const boards = ref<Board[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  const selectedId = ref<string | null>(null)
+  const selectedBoard = computed(() => boards.value.find((b) => b.id === selectedId.value) ?? null)
 
-      if (this.selectedId === id) {
-        this.selectedId = null
-      }
-    },
-    async getBoard(id: string) {
-      this.loading = true
-      this.error = null
-      try {
-        const board = await getBoardById(id)
-        return board
-      } catch (e: any) {
-        this.error = e.message
-      } finally {
-        this.loading = false
-      }
-    },
-    async addItemToBoard(boardId: string, name: string, description: string) {
-      try {
-        return await addBoardItem(boardId, name, description)
-      } catch (error) {
-        console.error('Failed to add item to board:', error)
-      }
-    },
-    async changeItemStatus(itemId: string, status: StatusType) {
-      try {
-        await changeBoardItemStatus(itemId, status)
-      } catch (error) {
-        console.error('Failed to update item status:', error)
-      }
-    },
-  },
+  async function fetchBoards() {
+    loading.value = true
+    error.value = null
+    try {
+      boards.value = await getAllBoards()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function selectBoard(id: string) {
+    selectedId.value = id
+  }
+
+  async function addBoard(name: string) {
+    await createBoard({ name })
+    await fetchBoards()
+  }
+
+  async function removeBoard(id: string) {
+    await deleteBoard(id)
+    boards.value = boards.value.filter((b) => b.id !== id)
+
+    if (selectedId.value === id) {
+      selectedId.value = null
+    }
+  }
+
+  async function fetchBoardById(id: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const board = await getBoardById(id)
+      return board
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function addItemToBoard(boardId: string, name: string, description: string) {
+    try {
+      return await addBoardItem(boardId, name, description)
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error'
+    }
+  }
+
+  async function removeItem(itemId: string) {
+    try {
+      await removeItemFromBoard(itemId)
+      const board = selectedBoard.value
+      if (!board) return
+
+      board.boardItems = board.boardItems.filter((item) => item.id !== itemId)
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error'
+      throw e
+    }
+  }
+
+  async function changeItemStatus(itemId: string, status: StatusType) {
+    try {
+      await changeBoardItemStatus(itemId, status)
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error'
+    }
+  }
+
+  return {
+    boards,
+    loading,
+    error,
+    selectedId,
+    selectedBoard,
+    fetchBoards,
+    selectBoard,
+    addBoard,
+    removeBoard,
+    fetchBoardById,
+    addItemToBoard,
+    removeItem,
+    changeItemStatus,
+  }
 })

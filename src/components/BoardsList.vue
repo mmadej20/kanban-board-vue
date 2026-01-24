@@ -1,31 +1,26 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useBoardsStore } from '@/stores/boards'
 
 const boardsStore = useBoardsStore()
+const { boards, selectedId } = storeToRefs(boardsStore)
 
 onMounted(() => boardsStore.fetchBoards())
-
-function selectBoard(id: string) {
-  boardsStore.selectBoard(id)
-}
-function removeBoard(id: string) {
-  boardsStore.removeBoard(id)
-}
 </script>
 
 <template>
   <ul class="boards-list">
     <li
-      v-for="b in boardsStore.boards"
-      :key="b.id"
-      :class="{ selected: boardsStore.selectedId === b.id }"
-      @click="selectBoard(b.id)"
+      v-for="board in boards"
+      :key="board.id"
+      :class="{ selected: selectedId === board.id }"
+      @click="boardsStore.selectBoard(board.id)"
     >
       <div class="boards-list-item">
-        {{ b.name }}
+        {{ board.name }}
         <p>
-          <button @click.stop="removeBoard(b.id)">X</button>
+          <button @click.stop="boardsStore.removeBoard(board.id)">X</button>
         </p>
       </div>
     </li>
