@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { StatusType } from '@/models/StatusType'
 
 interface Props {
@@ -13,10 +13,11 @@ interface Emits {
   (e: 'create', name: string, description: string): void
 }
 
-defineProps<Props>()
-
+const props = defineProps<Props>()
 const name = ref('')
 const description = ref('')
+const emit = defineEmits<Emits>()
+const isNameValid = computed(() => name.value.trim().length > 0)
 
 function handleCreate() {
   if (name.value.trim()) {
@@ -35,7 +36,12 @@ function resetForm() {
   description.value = ''
 }
 
-const emit = defineEmits<Emits>()
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) resetForm()
+  },
+)
 </script>
 
 <template>
@@ -71,7 +77,7 @@ const emit = defineEmits<Emits>()
 
       <div class="modal-footer">
         <button class="btn-cancel" @click="handleClose">Cancel</button>
-        <button class="btn-create" @click="handleCreate">Create</button>
+        <button class="btn-create" :disabled="!isNameValid" @click="handleCreate">Create</button>
       </div>
     </div>
   </div>
@@ -96,8 +102,11 @@ const emit = defineEmits<Emits>()
   border-radius: 12px;
   border: 1px solid #3a3d41;
   width: 90%;
-  max-width: 500px;
+  max-width: 60vh;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -135,6 +144,7 @@ const emit = defineEmits<Emits>()
 
 .modal-body {
   padding: 16px;
+  overflow-y: auto;
 }
 
 .form-group {
@@ -164,6 +174,8 @@ const emit = defineEmits<Emits>()
   font-family: inherit;
   font-size: 0.95rem;
   transition: border-color 0.2s ease;
+  resize: vertical;
+  min-height: fit-content;
 }
 
 .form-group input:focus,
@@ -202,6 +214,11 @@ const emit = defineEmits<Emits>()
 .btn-create {
   background: #1884ba;
   color: white;
+}
+
+.btn-create:disabled {
+  background: #555c66;
+  cursor: not-allowed;
 }
 
 .btn-create:hover {
