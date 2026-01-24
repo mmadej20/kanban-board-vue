@@ -61,12 +61,27 @@ export const useBoardsStore = defineStore('boards', () => {
     }
   }
 
-  async function addItemToBoard(boardId: string, name: string, description: string) {
-    try {
-      return await addBoardItem(boardId, name, description)
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Unknown error'
-    }
+  async function addItemToBoard(payload: {
+    boardId: string
+    name: string
+    description: string
+    status: StatusType
+  }) {
+    const itemId = await addBoardItem(payload.boardId, payload.name, payload.description)
+
+    await changeItemStatus(itemId, payload.status)
+
+    const board = selectedBoard.value
+    if (!board) return
+
+    board.boardItems.push({
+      id: itemId,
+      boardId: payload.boardId,
+      assignedMemberId: '',
+      name: payload.name,
+      description: payload.description,
+      status: payload.status,
+    })
   }
 
   async function removeItem(itemId: string) {

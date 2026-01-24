@@ -27,22 +27,13 @@ const columns = computed<Record<StatusType, BoardItem[]>>(() => {
 })
 
 async function handleCreateItem(name: string, description: string) {
-  const newItem: BoardItem = {
-    id: '',
+  await boardsStore.addItemToBoard({
     boardId: creatorBoardId.value,
-    assignedMemberId: '',
-    name: name,
-    description: description,
     status: creatorStatus.value,
-  }
-  const response: string = await boardsStore.addItemToBoard(
-    newItem.boardId,
-    newItem.name,
-    newItem.description,
-  )
-  await boardsStore.changeItemStatus(response, creatorStatus.value)
-  newItem.id = response
-  columns.value[newItem.status].push(newItem)
+    name,
+    description,
+  })
+
   isCreatorOpen.value = false
 }
 
