@@ -101,6 +101,13 @@ export const useBoardsStore = defineStore('boards', () => {
   async function changeItemStatus(itemId: string, status: StatusType) {
     try {
       await changeBoardItemStatus(itemId, status)
+      const board = selectedBoard.value
+      if (!board) return
+
+      const item = board.boardItems.find((i) => i.id === itemId)
+      if (item) {
+        item.status = status
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error'
     }
