@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { StatusType } from '@/models/StatusType'
 
 interface Props {
@@ -14,27 +14,42 @@ interface Emits {
 }
 
 const props = defineProps<Props>()
+const emits = defineEmits<Emits>()
+
 const name = ref('')
 const description = ref('')
-const emit = defineEmits<Emits>()
 const isNameValid = computed(() => name.value.trim().length > 0)
 
 function handleCreate() {
   if (name.value.trim()) {
-    emit('create', name.value, description.value)
+    emits('create', name.value, description.value)
     resetForm()
   }
 }
 
 function handleClose() {
   resetForm()
-  emit('close')
+  emits('close')
 }
 
 function resetForm() {
   name.value = ''
   description.value = ''
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    emits('close')
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+})
 
 watch(
   () => props.isOpen,
