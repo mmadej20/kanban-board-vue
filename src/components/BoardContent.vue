@@ -1,7 +1,7 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
 import { VueDraggableNext as draggable } from 'vue-draggable-next'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useBoardsStore } from '@/stores/boards'
 import { StatusType, StatusTypes, StatusTypeLabel } from '@/models/StatusType'
 import BoardItemCreator from './BoardItemCreator.vue'
@@ -13,17 +13,13 @@ const isCreatorOpen = ref(false)
 const creatorStatus = ref<StatusType>(StatusType.New)
 const creatorBoardId = ref('')
 
-const columns = computed<Record<StatusType, BoardItem[]>>(() => {
-  const result = {} as Record<StatusType, BoardItem[]>
-  for (const st of StatusTypes) {
-    result[st] = []
-  }
-
-  for (const item of board.value?.boardItems ?? []) {
-    result[item.status].push(item)
-  }
-
-  return result
+const columns = ref<Record<StatusType, BoardItem[]>>({
+  [StatusType.New]: [],
+  [StatusType.InProgress]: [],
+  [StatusType.Canceled]: [],
+  [StatusType.ToDo]: [],
+  [StatusType.OnHold]: [],
+  [StatusType.Completed]: [],
 })
 
 async function handleCreateItem(name: string, description: string) {
@@ -53,6 +49,20 @@ function openCreator(status: StatusType, boardId: string) {
   creatorBoardId.value = boardId
   isCreatorOpen.value = true
 }
+
+watch(
+  () => boardsStore.selectedBoard?.boardItems,
+  (items = []) => {
+    for (const st of StatusTypes) {
+      columns.value[st] = []
+    }
+
+    for (const item of items) {
+      columns.value[item.status].push(item)
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

@@ -74,14 +74,15 @@ export const useBoardsStore = defineStore('boards', () => {
     const board = selectedBoard.value
     if (!board) return
 
-    board.boardItems.push({
+    const newItem = {
       id: itemId,
       boardId: payload.boardId,
       assignedMemberId: '',
       name: payload.name,
       description: payload.description,
       status: payload.status,
-    })
+    }
+    board.boardItems = [...board.boardItems, newItem]
   }
 
   async function removeItem(itemId: string) {
